@@ -11,6 +11,7 @@ module Lexer
   , alexError
   , runAlex
   , alexGetInput
+  , AlexPosn (..)
 )
 where
 

@@ -20,9 +20,12 @@ import Lexer
 %lexer { lexer } { ATok Teof _ _ }
 %expect 0
 
+%nonassoc is
+%nonassoc else
 %nonassoc equal less
 %left     plus minus
 %right    times
+%right    arrow
 
 %token
       let     { ATok Tlet _ _    }
@@ -38,6 +41,15 @@ import Lexer
       times   { ATok Ttimes _ _  }
       less    { ATok Tless _ _   }
       semisemi { ATok Tsemisemi _ _ }
+      if      { ATok Tif _ _     }
+      then    { ATok Tthen _ _   }
+      else    { ATok Telse _ _   }
+      fun     { ATok Tfun _ _    }
+      arrow   { ATok Tarrow _ _  }
+      colon   { ATok Tcolon _ _  }
+      is      { ATok Tis _ _     }
+      t_bool  { ATok Tt_bool _ _ }
+      t_int   { ATok Tt_int _ _  }
 
 %%
 
@@ -61,6 +73,10 @@ Expr : App { $1 }
      | Expr times Expr { mkAExpr $2 $ ETimes (extractExpr $1) (extractExpr $3)    }
      | Expr less Expr  { mkAExpr $2 $ ELess (extractExpr $1) (extractExpr $3)     }
      | Expr equal Expr { mkAExpr $2 $ EEqual (extractExpr $1) (extractExpr $3)    }
+     | if Expr then Expr else Expr
+       { mkAExpr $1 $ EIf (extractExpr $2) (extractExpr $4) (extractExpr $6) }
+     | fun ident lparen ident colon Ty rparen colon Ty is Expr
+       { mkAExpr $1 $ EFun (extractLexeme $2) (extractLexeme $4) $6 $9 (extractExpr $11) }
 
 App : App Atom { mkAppExpr $1 $2  }
     | Atom     { $1               }
@@ -71,7 +87,17 @@ Atom : ident              { mkAExpr $1 $ EIdent (extractLexeme $1)         }
      | int                { mkAExpr $1 $ EInt (read . extractLexeme $ $1)  }
      | lparen Expr rparen { $2                                             }
 
+Ty : t_bool           { TBool }
+   | t_int            { TInt  }
+   | Ty arrow Ty      { TArrow $1 $3 }
+   | lparen Ty rparen { $2 }
+
 {
+
+data Ty = TBool
+        | TInt
+        | TArrow Ty Ty
+        deriving (Eq, Show)
 
 data AnnotatedExpr = AExpr Expr Posn deriving (Eq, Show)
 
@@ -84,6 +110,8 @@ data Expr = EIdent String
           | ELess Expr Expr
           | EMinus Expr Expr
           | EEqual Expr Expr
+          | EIf !Expr !Expr !Expr
+          | EFun !String !String !Ty !Ty !Expr
           deriving (Eq, Show)
 
 data AnnotatedStmt = AStmt Stmt Posn deriving (Eq, Show)
@@ -93,8 +121,27 @@ data Stmt = SLet String Expr
           deriving (Eq, Show)
 
 parserError :: AnnotatedToken -> Alex a
-parserError (ATok _ _ lexeme) = do
-  alexError $ "parser error after token \"" <> lexeme <> "\""
+parserError (ATok tk _ _) = do
+  ((AlexPn _ line column), _, _, remaining) <- alexGetInput
+
+  let error = case tk of
+                Tis -> "Invalid use of the 'is' keyword"
+                _   -> "Unexpected input: " <> if null remaining then "eof" else take 10 remaining <> "..."
+
+  let hint = case tk of
+                Teof -> "Maybe you are missing a ';;' at the end?"
+                Tis  -> "Provide a body for the function"
+                _    -> ""
+
+  alexError $ mconcat 
+    [ "\x1b[31m"
+    , "Error at line ", show line, ", column ", show column, ": "
+    , error, "\n"
+    , "\x1b[m"
+    , if null hint
+        then ""
+        else ("\n  \x1b[34mHint:\x1b[m " <> hint <> "\n")
+    ]
 
 extractExpr :: AnnotatedExpr -> Expr
 extractExpr (AExpr expr _) = expr
