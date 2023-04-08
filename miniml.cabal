@@ -1,0 +1,21 @@
+cabal-version:      2.4
+name:               miniml
+version:            0.1.0.0
+-- synopsis:
+-- description:
+-- bug-reports:
+-- license:
+author:             Alexander Goussas
+maintainer:         goussasalexander@gmail.com
+-- copyright:
+-- category:
+extra-source-files: CHANGELOG.md
+
+executable miniml
+    main-is:          Main.hs
+    other-modules:    Lexer
+                    , Parser
+    build-depends:    base ^>=4.16.4.0
+                    , array
+    hs-source-dirs:   src
+    default-language: Haskell2010
