@@ -1,24 +1,34 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Error
 (
       mkErr
     , mkErr'
+    , mkErrNoPos
     , Error
 )
 where
 
-import           Lexer (Posn (..))
+import           Control.Exception (Exception)
+import           Lexer             (Posn (..))
 
 
-data Error = MkError !Posn !String !(Maybe String)
+data Error = MkError !Bool !Posn !String !(Maybe String) deriving Exception
+
+mkErrNoPos :: String -> Error
+mkErrNoPos msg =  MkError False undefined msg Nothing
 
 mkErr :: Posn -> String -> Error
-mkErr pos msg = MkError pos msg Nothing
+mkErr pos msg = MkError True pos msg Nothing
 
 mkErr' :: Posn -> String -> String -> Error
-mkErr' pos msg hint = MkError pos msg (Just hint)
+mkErr' pos msg hint = MkError True pos msg (Just hint)
 
 instance Show Error where
-    show (MkError (Posn line column) msg hint) = mconcat
+    show (MkError False _ msg hint) = mconcat
+        [ "Error: ", msg, "\n\n"
+        , errHint hint
+        ]
+    show (MkError True (Posn line column) msg hint) = mconcat
         [ errHeader line column msg
         , errHint hint
         ]

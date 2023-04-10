@@ -4,41 +4,44 @@ import           Control.Monad.IO.Class   (MonadIO)
 import           System.Console.Haskeline
 
 import           Compiler
+import           Machine
 import           Parser                   (AnnotatedStmt (..), Stmt (..),
                                            parseTopLevel)
 import           Typechecker              (Context, emptyContext, extendContext,
                                            typeOfExpr)
 
-exec :: (MonadIO m) => Context -> String -> InputT m Context
-exec ctx program =
+exec :: (MonadIO m) => (Context, Environ) -> String -> InputT m (Context, Environ)
+exec state@(ctx, env) program =
     case parseTopLevel program of
-        Left err                       -> outputStrLn err >> pure ctx
+        Left err                       -> outputStrLn err >> pure state
         Right (AStmt (SExpr expr) pos) -> do
             let ty = typeOfExpr ctx pos expr
             case ty of
-                Left err  -> outputStrLn (show err) >> pure ctx
-                Right _ -> do
+                Left err  -> outputStrLn (show err) >> pure state
+                Right ty' -> do
                     let instructions = compile expr
-                    outputStrLn $ show instructions
-                    pure ctx
+                    let value = run instructions env
+                    outputStrLn $ "- : " <> show ty' <> " = " <> show value
+                    pure state
         Right (AStmt (SLet ident expr) pos) -> do
             let ty = typeOfExpr ctx pos expr
             case ty of
-                Left err -> outputStrLn (show err) >> pure ctx
+                Left err -> outputStrLn (show err) >> pure state
                 Right ty' -> do
                     let instructions = compile expr
-                    outputStrLn $ show instructions
-                    pure $ extendContext ctx ident ty'
+                    let value = run instructions env
+                    outputStrLn $ ident <> ": " <> show ty' <> " = " <> show value
+                    pure (extendContext ctx ident ty', (ident,value):env)
 
 repl :: IO ()
 repl = do
-    let loop ctx = do
+    let loop (ctx, env) = do
             line <- getInputLine "> "
             case line of
                 Nothing      -> pure ()
                 Just ":quit" -> pure ()
-                Just line'   -> exec ctx line' >>= loop
-    runInputT defaultSettings (loop emptyContext)
+                Just line'   -> exec (ctx, env) line' >>= loop
+    runInputT defaultSettings (loop (emptyContext, []))
 
 main :: IO ()
 main = repl
