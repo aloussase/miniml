@@ -4,6 +4,11 @@ module Parser
 (
       parseFile
     , parseTopLevel
+    , AnnotatedStmt (..)
+    , Stmt (..)
+    , AnnotatedExpr (..)
+    , Expr (..)
+    , Ty (..)
 )
 where
 
@@ -97,7 +102,12 @@ Ty : t_bool           { TBool }
 data Ty = TBool
         | TInt
         | TArrow Ty Ty
-        deriving (Eq, Show)
+        deriving Eq
+
+instance Show Ty where
+    show TBool          = "bool"
+    show TInt           = "int"
+    show (TArrow t1 t2) = show t1 <> " -> " <> show t2
 
 data AnnotatedExpr = AExpr Expr Posn deriving (Eq, Show)
 
