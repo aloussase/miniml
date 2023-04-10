@@ -18,6 +18,8 @@ executable miniml
                     , Parser
                     , Typechecker
                     , Error
+                    , Compiler
+                    , Machine
     build-depends:    base ^>=4.16.4.0
                     , array
                     , haskeline

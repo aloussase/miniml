@@ -3,6 +3,7 @@ module Main where
 import           Control.Monad.IO.Class   (MonadIO)
 import           System.Console.Haskeline
 
+import           Compiler
 import           Parser                   (AnnotatedStmt (..), Stmt (..),
                                            parseTopLevel)
 import           Typechecker              (Context, emptyContext, extendContext,
@@ -16,13 +17,17 @@ exec ctx program =
             let ty = typeOfExpr ctx pos expr
             case ty of
                 Left err  -> outputStrLn (show err) >> pure ctx
-                Right ty' -> outputStrLn (show ty') >> pure ctx
+                Right _ -> do
+                    let instructions = compile expr
+                    outputStrLn $ show instructions
+                    pure ctx
         Right (AStmt (SLet ident expr) pos) -> do
             let ty = typeOfExpr ctx pos expr
             case ty of
                 Left err -> outputStrLn (show err) >> pure ctx
                 Right ty' -> do
-                    outputStrLn $ show ty'
+                    let instructions = compile expr
+                    outputStrLn $ show instructions
                     pure $ extendContext ctx ident ty'
 
 repl :: IO ()
