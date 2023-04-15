@@ -40,6 +40,8 @@ fn main() {
             } else {
                 println!("{}", line);
             }
+
+            buffer.fill(0);
         } else {
             break;
         }
