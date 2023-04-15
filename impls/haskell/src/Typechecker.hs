@@ -28,14 +28,14 @@ extendContext :: Context -> String -> Ty -> Context
 extendContext (Context ctx) ident ty = Context $ (ident,ty):ctx
 
 typeOfExpr :: Context -> Posn -> Expr -> Either Error Ty
-typeOfExpr _ _ (EInt _)                           = pure TInt
-typeOfExpr _ _ (EBool _)                          = pure TBool
+typeOfExpr _ _ (EInt _)                             = pure TInt
+typeOfExpr _ _ (EBool _)                            = pure TBool
 typeOfExpr ctx pos (EIdent ident)                   = typeOfIdent ctx pos ident
-typeOfExpr ctx pos (EPlus e1 e2 )                   = typeOfBinop ctx pos e1 e2 TInt
-typeOfExpr ctx pos (ETimes e1 e2)                   = typeOfBinop ctx pos e1 e2 TInt
-typeOfExpr ctx pos (EMinus e1 e2)                   = typeOfBinop ctx pos e1 e2 TInt
-typeOfExpr ctx pos (ELess e1 e2)                    = typeOfBinop ctx pos e1 e2 TBool
-typeOfExpr ctx pos (EEqual e1 e2)                   = typeOfBinop ctx pos e1 e2 TBool
+typeOfExpr ctx pos (EPlus e1 e2 )                   = typeOfBinop ctx pos e1 e2 TInt TInt
+typeOfExpr ctx pos (ETimes e1 e2)                   = typeOfBinop ctx pos e1 e2 TInt TInt
+typeOfExpr ctx pos (EMinus e1 e2)                   = typeOfBinop ctx pos e1 e2 TInt TInt
+typeOfExpr ctx pos (ELess e1 e2)                    = typeOfBinop ctx pos e1 e2 TInt TBool
+typeOfExpr ctx pos (EEqual e1 e2)                   = typeOfBinop ctx pos e1 e2 TInt TBool
 typeOfExpr ctx pos (EApp e1 e2)                     = typeOfApp ctx pos e1 e2
 typeOfExpr ctx pos (EIf e1 e2 e3)                   = typeOfIf ctx pos e1 e2 e3
 typeOfExpr ctx pos (EFun ident param tparam tret e) = typeOfFuncDecl ctx pos ident param tparam tret e
@@ -77,13 +77,13 @@ typeOfIf ctx pos condition thenBranch elseBranch = do
 
     pure t1
 
-typeOfBinop :: Context -> Posn -> Expr -> Expr -> Ty -> Either Error Ty
-typeOfBinop ctx pos e1 e2 expectedType = do
+typeOfBinop :: Context -> Posn -> Expr -> Expr -> Ty -> Ty -> Either Error Ty
+typeOfBinop ctx pos e1 e2 expectedType returnType = do
     t1 <- typeOfExpr ctx pos e1
     t2 <- typeOfExpr ctx pos e2
 
     if allSame [t1, t2, expectedType]
-        then pure expectedType
+        then pure returnType
         else Left $ mkErr pos $ mconcat [ "Invalid types for binary operator: "
                                         , "expected ", show expectedType, " and ", show expectedType
                                         , ", but got ", show t1, " and ", show t2
