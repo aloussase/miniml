@@ -1,0 +1,7 @@
+[package]
+name = "miniml_repl"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+termios = "0.3.3"
