@@ -12,23 +12,23 @@ import           Control.Exception (Exception)
 import           Lexer             (Posn (..))
 
 
-data Error = MkError !Bool !Posn !String !(Maybe String) deriving Exception
+data Error = MkError !(Maybe Posn) !String !(Maybe String) deriving Exception
 
 mkErrNoPos :: String -> Error
-mkErrNoPos msg =  MkError False undefined msg Nothing
+mkErrNoPos msg =  MkError Nothing msg Nothing
 
 mkErr :: Posn -> String -> Error
-mkErr pos msg = MkError True pos msg Nothing
+mkErr pos msg = MkError (Just pos) msg Nothing
 
 mkErr' :: Posn -> String -> String -> Error
-mkErr' pos msg hint = MkError True pos msg (Just hint)
+mkErr' pos msg hint = MkError (Just pos) msg (Just hint)
 
 instance Show Error where
-    show (MkError False _ msg hint) = mconcat
+    show (MkError Nothing msg hint) = mconcat
         [ "Error: ", msg, "\n\n"
         , errHint hint
         ]
-    show (MkError True (Posn line column) msg hint) = mconcat
+    show (MkError (Just (Posn line column)) msg hint) = mconcat
         [ errHeader line column msg
         , errHint hint
         ]

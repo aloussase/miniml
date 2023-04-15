@@ -56,10 +56,11 @@ exec program = do
 loop :: Socket -> AppM ()
 loop clientSocket = do
     line <- liftIO $ recv clientSocket 4096
-    case line of
+    case B8.unpack <$> line of
         Nothing    -> pure ()
         Just line' -> do
-            result <- exec (B8.unpack line')
+            result <- exec line'
+            liftIO $ putStrLn result
             liftIO $ send clientSocket (B8.pack result)
             loop clientSocket
 
