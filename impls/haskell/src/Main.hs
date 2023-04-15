@@ -1,47 +1,68 @@
 module Main where
 
-import           Control.Monad.IO.Class   (MonadIO)
-import           System.Console.Haskeline
+import           Control.Monad.State
+import qualified Data.ByteString.Char8 as B8
+import           Network.Simple.TCP
 
 import           Compiler
 import           Machine
-import           Parser                   (AnnotatedStmt (..), Stmt (..),
-                                           parseTopLevel)
-import           Typechecker              (Context, emptyContext, extendContext,
-                                           typeOfExpr)
+import           Parser                (AnnotatedStmt (..), Stmt (..),
+                                        parseTopLevel)
+import           Typechecker           (Context, emptyContext, extendContext,
+                                        typeOfExpr)
 
-exec :: (MonadIO m) => (Context, Environ) -> String -> InputT m (Context, Environ)
-exec state@(ctx, env) program =
+data AppState = AppState
+    { appStateContext :: !Context
+    , appStateEnviron :: !Environ
+    }
+
+initialState :: AppState
+initialState = AppState emptyContext []
+
+type AppM = StateT AppState IO
+
+exec :: String -> AppM String
+exec program = do
+    ctx <- gets appStateContext
+    env <- gets appStateEnviron
+
     case parseTopLevel program of
-        Left err                       -> outputStrLn err >> pure state
+        Left err                       -> pure $ show err
         Right (AStmt (SExpr expr) pos) -> do
             let ty = typeOfExpr ctx pos expr
             case ty of
-                Left err  -> outputStrLn (show err) >> pure state
+                Left err  -> pure $ show err
                 Right ty' -> do
                     let instructions = compile expr
                     let value = run instructions env
-                    outputStrLn $ "- : " <> show ty' <> " = " <> show value
-                    pure state
+                    let result = "- : " <> show ty' <> " = " <> show value
+                    pure result
         Right (AStmt (SLet ident expr) pos) -> do
             let ty = typeOfExpr ctx pos expr
             case ty of
-                Left err -> outputStrLn (show err) >> pure state
+                Left err -> pure $ show err
                 Right ty' -> do
                     let instructions = compile expr
                     let value = run instructions env
-                    outputStrLn $ ident <> ": " <> show ty' <> " = " <> show value
-                    pure (extendContext ctx ident ty', (ident,value):env)
+                    let result = ident <> ": " <> show ty' <> " = " <> show value
 
-repl :: IO ()
-repl = do
-    let loop (ctx, env) = do
-            line <- getInputLine "> "
-            case line of
-                Nothing      -> pure ()
-                Just ":quit" -> pure ()
-                Just line'   -> exec (ctx, env) line' >>= loop
-    runInputT defaultSettings (loop (emptyContext, []))
+                    put $ AppState
+                        { appStateContext = extendContext ctx ident ty'
+                        , appStateEnviron = (ident,value) : env
+                        }
+
+                    pure result
+
+loop :: Socket -> AppM ()
+loop clientSocket = do
+    line <- liftIO $ recv clientSocket 4096
+    case line of
+        Nothing    -> pure ()
+        Just line' -> do
+            result <- exec (B8.unpack line')
+            liftIO $ send clientSocket (B8.pack result)
+            loop clientSocket
 
 main :: IO ()
-main = repl
+main = serve (Host "127.0.0.1") "3693" $ \(clientSocket, _) ->
+        evalStateT (loop clientSocket) initialState

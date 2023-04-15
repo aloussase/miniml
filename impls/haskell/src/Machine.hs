@@ -52,16 +52,12 @@ lookupEnv (env:_) ident =
         Just value -> value
         _          -> machineError $ "Unbound variable: " <> ident
 
-pop :: Stack -> (MValue, Stack)
-pop (x : xs) = (x, xs)
-pop _        = machineError "Empty stack"
-
 popBool :: Stack -> (Bool, Stack)
 popBool (MBool b : s) =  (b, s)
 popBool _             = machineError "Expected bool"
 
 popApp :: Stack -> (MValue, String, Frame, Environ, Stack)
-popApp (v: MClosure ident body env : s) = (v, ident, body, env, s)
+popApp (v : MClosure ident body env : s) = (v, ident, body, env, s)
 popApp _ = machineError "Expected function application"
 
 mult :: Stack -> Stack
@@ -84,29 +80,42 @@ less :: Stack -> Stack
 less (MInt x : MInt y : s) = MBool (y < x):s
 less _ = machineError "int and int expected for binary operator '<'"
 
-exec :: Inst -> [Frame] -> Stack -> [Environ] -> ([Frame], Stack, [Environ])
-exec IAdd frms stack env         = (frms, add stack, env)
-exec IMult frms stack env        = (frms, mult stack, env)
-exec ISub frms stack env         = (frms, sub stack, env)
-exec IEqual frms stack env       = (frms, equal stack, env)
-exec ILess frms stack env        = (frms, less stack, env)
-exec (IVar ident) frms stack env = (frms, lookupEnv env ident : stack, env)
-exec (IInt n) frms stack env     = (frms, MInt n : stack, env)
-exec (IBool b) frms stack env    = (frms, MBool b : stack, env)
-exec (IClosure ident param body) frms stack envs =
-    case envs of
-        env:_ ->
-            let c = MClosure param body ((ident,c):env)
-             in (frms, c:stack, envs)
-        _    -> machineError "No environment for closure"
+closure :: Inst -> [Frame] -> Stack -> [Environ] -> ([Frame], Stack, [Environ])
+closure _ _ _ [] = machineError "No environment for closure"
+closure (IClosure ident param body) frms stack (env:envs) =
+    let c = MClosure param body ((ident,c) : env) in
+        (frms, c : stack, envs)
+closure _ _ _ _ = machineError "Tried to interpret non-closure as closure"
 
+if_ :: Frame -> Frame -> [Frame] -> Stack -> [Environ] -> ([Frame], Stack, [Environ])
+if_ thenBranch elseBranch frms stack envs =
+    let (b, stack') = popBool stack in
+        ((if b then thenBranch else elseBranch) : frms, stack', envs)
+
+call :: [Frame] -> Stack -> [Environ] -> ([Frame], Stack, [Environ])
+call frms stack envs =
+    let (v, ident, frm, env, stack') = popApp stack in
+        (frm : frms, stack', ((ident, v) : env) : envs)
+
+exec :: Inst -> [Frame] -> Stack -> [Environ] -> ([Frame], Stack, [Environ])
+exec IAdd frms stack env                             = (frms, add stack, env)
+exec IMult frms stack env                            = (frms, mult stack, env)
+exec ISub frms stack env                             = (frms, sub stack, env)
+exec IEqual frms stack env                           = (frms, equal stack, env)
+exec ILess frms stack env                            = (frms, less stack, env)
+exec (IVar ident) frms stack env                     = (frms, lookupEnv env ident : stack, env)
+exec (IInt n) frms stack env                         = (frms, MInt n : stack, env)
+exec (IBool b) frms stack env                        = (frms, MBool b : stack, env)
+exec IPopEnv _ _ []                                  =  machineError "no environment to pop"
+exec IPopEnv frms stack (_:envs')                    = (frms, stack, envs')
+exec inst@(IClosure _ _ _) frms stack envs           = closure inst frms stack envs
+exec (IBranch thenBranch elseBranch) frms stack envs = if_ thenBranch elseBranch frms stack envs
+exec ICall frms stack envs                           = call frms stack envs
 
 run :: Frame -> Environ -> MValue
-run frm env =
-    let loop args = case args of
-                        ([], [v], _) -> v
-                        ((i:is):frms, stack, envs) -> loop (exec i (is:frms) stack envs)
-                        ([]:frms, stack, envs) -> loop (frms, stack, envs)
-                        _ -> machineError "Illegal end of program"
-     in
-        loop ([frm], [], [env])
+run frm env = loop ([frm], [], [env])
+    where
+        loop ([], [v], _)               = v
+        loop ((i:is):frms, stack, envs) = loop (exec i (is:frms) stack envs)
+        loop ([]:frms, stack, envs)     = loop (frms, stack, envs)
+        loop _                          = machineError "Illegal end of program"
