@@ -1,5 +1,7 @@
 # miniml
 
+![miniml](./assets/miniml.png)
+
 Implementation of the MiniML language from
 [plzoo](https://github.com/andrejbauer/plzoo) in various programming languages.
 
