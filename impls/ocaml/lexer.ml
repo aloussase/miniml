@@ -2,29 +2,56 @@ exception Invalid_Token of char
 exception Expected_Character of char
 
 type token_type =
+  (* types *)
   | TT_tint
   | TT_tbool
-  | TT_colon (* types *)
+  | TT_colon
+  (* literals *)
   | TT_int
   | TT_true
-  | TT_false (* literals *)
+  | TT_false
+  (* functions *)
   | TT_fun
-  | TT_is (* functions *)
+  | TT_is
+  (* if expressions *)
   | TT_if
   | TT_then
-  | TT_else (* if expressions *)
+  | TT_else
+  (* parens *)
   | TT_lparen
-  | TT_rparen (* parens *)
+  | TT_rparen
+  (* logic operators *)
   | TT_less
-  | TT_equal (* logic operators *)
+  | TT_equal
+  (* arith operators *)
   | TT_plus
   | TT_minus
-  | TT_times (* arith operators *)
+  | TT_times
   | TT_ident
   | TT_semisemi
   | TT_eof
 
 type token = { typ : token_type; lexeme : string; line : int; col : int }
+
+let print_token { typ; lexeme; line; col } =
+  let s =
+    Printf.sprintf "token{lexeme: %s; line: %d; col: %d}" lexeme line col
+  in
+  print_endline s
+
+(** Helper functions *)
+
+let is_digit = function
+  | '0' .. '9' -> true
+  | _ -> false
+
+let is_valid_identifier_char = function
+  | ')' -> false
+  | '(' -> false
+  | ':' -> false
+  | ';' -> false
+  | ' ' -> false
+  | _ -> true
 
 class lexer (source : string) =
   object (self)
@@ -63,22 +90,16 @@ class lexer (source : string) =
             line <- line + 1;
             f tokens
         | Some ' ' | Some '\t' -> f tokens
-        | Some '0'
-        | Some '1'
-        | Some '2'
-        | Some '3'
-        | Some '4'
-        | Some '5'
-        | Some '6'
-        | Some '7'
-        | Some '8'
-        | Some '9' -> begin
-            failwith "TODO"
+        | Some '0' .. '9' -> begin
+            while Option.is_some self#peek && is_digit (Option.get self#peek) do
+              ignore self#advance
+            done;
+            f (self#token_at_current TT_int :: tokens)
           end
         | Some c -> begin
             while
               Option.is_some self#peek
-              && self#is_valid_identifier_char (Option.get self#peek)
+              && is_valid_identifier_char (Option.get self#peek)
             do
               ignore self#advance
             done;
@@ -90,15 +111,6 @@ class lexer (source : string) =
         | None -> tokens
       in
       List.rev (f [])
-
-    method is_valid_identifier_char c =
-      match c with
-      | ')' -> false
-      | '(' -> false
-      | ':' -> false
-      | ';' -> false
-      | ' ' -> false
-      | _ -> true
 
     method token_at_current typ =
       let lexeme_len = current - start in

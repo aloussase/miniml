@@ -1,2 +1,4 @@
 exp-grouping = preserve
 if-then-else = vertical
+single-case = sparse
+break-cases = fit-or-vertical

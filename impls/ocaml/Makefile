@@ -8,7 +8,7 @@ build/%.cmx: %.ml
 	$(OCAML) -I build -c $< -o $@
 
 miniml: $(OBJS)
-	$(OCAML) -I build -o $@ $^
+	$(OCAML) -o $@ $^
 
 clean:
 	$(RM) -r build miniml *.cmx *.cmi *.o
