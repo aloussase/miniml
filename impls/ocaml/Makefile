@@ -1,6 +1,6 @@
 OCAML := ocamlopt
 
-SRCS := lexer.ml main.ml
+SRCS := lexer.ml syntax.ml parser.ml main.ml
 OBJS := $(SRCS:%.ml=build/%.cmx)
 
 build/%.cmx: %.ml

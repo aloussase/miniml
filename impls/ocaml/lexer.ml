@@ -84,7 +84,7 @@ class lexer (source : string) =
         | Some ';' -> begin
             match self#advance with
             | Some ';' -> self#token_at_current TT_semisemi :: tokens
-            | _ -> raise (Expected_Character ';')
+            | _ -> raise @@ Expected_Character ';'
           end
         | Some '\n' ->
             line <- line + 1;
