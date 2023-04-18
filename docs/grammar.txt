@@ -1,0 +1,30 @@
+<program> ::= <stmt>+
+
+<stmt> ::= <let> | <expr_stmt>
+
+<expr_stmt> ::= <expr> ";;"
+
+<let> ::= "let" <ws> <ident> <ews> "=" <ws> <expr> ";;"
+
+<expr> ::= <function> | <if> | <equal>
+
+<function> ::= "fun" <ws> <ident> <ews> "(" <ident> <ews> ":" <ews> <ident> ")" ":" <ews> <ident> <ws> "is" <ws> <expr>
+
+<if> ::= "if" <ews> <expr> <ews> "then" <ews> <expr> <ews> "else" <ews> <expr>
+
+<equal> ::= <less> <ews> "=" <ews> <equal> | <less>
+
+<less> ::= <plus> <ews> "<" <ews> <plus> | <plus>
+
+<plus> ::= <mult> <ews> "+" <ews> <plus> | <mult> <ews> "-" <ews> <plus> | <mult>
+
+<mult> ::= <factor> <ews> "*" <ews> <mult> | <factor>
+
+<factor> ::= <number> | <ident> | "(" <expr> ")"
+
+<number> ::= [0-9]+
+
+<ident> ::= ( [a-z] | [A-Z] ) ( [a-z] | [A-Z] | [0-9] | "_" )*
+
+<ews> ::= " "*
+<ws> ::= " "+
