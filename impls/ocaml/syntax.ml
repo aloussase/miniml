@@ -35,6 +35,6 @@ let rec string_of_expr = function
 
 type stmt = SLet of string * expr | SExpr of expr
 
-let rec string_of_stmt = function
+let string_of_stmt = function
   | SLet (ident, e) -> "let " ^ ident ^ " = " ^ string_of_expr e
   | SExpr e -> string_of_expr e

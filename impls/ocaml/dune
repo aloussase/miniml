@@ -1,0 +1,7 @@
+(executable
+  (name miniml)
+  (preprocess (pps ppx_deriving.show)))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

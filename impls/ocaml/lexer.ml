@@ -31,12 +31,14 @@ type token_type =
   | TT_let
   | TT_semisemi
   | TT_eof
+[@@deriving show]
 
 type token = { typ : token_type; lexeme : string; line : int; col : int }
 
 let print_token { typ; lexeme; line; col } =
   let s =
-    Printf.sprintf "token{lexeme: %s; line: %d; col: %d}" lexeme line col
+    Printf.sprintf "token{typ: %s; lexeme: %s; line: %d; col: %d}"
+      (show_token_type typ) lexeme line col
   in
   print_endline s
 
@@ -103,7 +105,7 @@ class lexer (source : string) =
             done;
             f (self#token_at_current TT_int :: tokens)
           end
-        | Some c -> begin
+        | Some _ -> begin
             while
               Option.is_some self#peek
               && is_valid_identifier_char (Option.get self#peek)
