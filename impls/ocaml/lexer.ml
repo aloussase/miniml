@@ -28,6 +28,7 @@ type token_type =
   | TT_minus
   | TT_times
   | TT_ident
+  | TT_let
   | TT_semisemi
   | TT_eof
 
@@ -68,6 +69,7 @@ class lexer (source : string) =
         ("if", TT_if);
         ("then", TT_then);
         ("else", TT_else);
+        ("let", TT_let);
       ]
 
     val mutable line = 1

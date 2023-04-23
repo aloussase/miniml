@@ -95,8 +95,26 @@ and parse_expr parser =
   | Some TT_if -> parse_if parser
   | _ -> parse_equal parser
 
+and parse_let parser =
+  ignore @@ expect parser TT_let;
+  let ident = expect parser TT_ident in
+  ignore @@ expect parser TT_equal;
+  let expr = parse_expr parser in
+  ignore @@ expect parser TT_semisemi;
+  SLet (ident.lexeme, expr)
+
+and parse_expr_stmt parser =
+  let expr = parse_expr parser in
+  ignore @@ expect parser TT_semisemi;
+  SExpr expr
+
+and parse_stmt parser =
+  match Option.map (fun tok -> tok.typ) (peek parser) with
+  | Some TT_let -> parse_let parser
+  | _ -> parse_expr_stmt parser
+
 let parse source =
   let l = new lexer source in
   let tokens = l#lex in
   let parser = { tokens; previous = List.hd tokens } in
-  [ SExpr (parse_expr parser) ]
+  [ parse_stmt parser ]

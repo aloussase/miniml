@@ -11,4 +11,4 @@ let exec program =
   | Invalid_Token c -> eprintf "Invalid character in input: %c" c
   | Expected_Character c -> eprintf "Expected character: %c" c
 
-let _ = exec "if 2 < 7 then 2 + 3 else 7 * 3;;"
+let _ = exec "let max = if 2 < 7 then 2 + 3 else 7 * 3;;"
