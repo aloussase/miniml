@@ -1,0 +1,16 @@
+BasedOnStyle: WebKit
+DerivePointerAlignment: false
+PointerAlignment: Left
+SpaceBeforeParens: ControlStatements
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: true
+AlignTrailingComments: true
+IndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: BlockIndent
+AlwaysBreakTemplateDeclarations: Yes
+ColumnLimit: 110
+AllowShortIfStatementsOnASingleLine: true
