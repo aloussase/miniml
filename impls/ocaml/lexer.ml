@@ -84,7 +84,7 @@ class lexer (source : string) =
         match self#advance with
         | Some '*' -> f (self#token_at_current TT_times :: tokens)
         | Some '+' -> f (self#token_at_current TT_plus :: tokens)
-        | Some '-' -> f (self#token_at_current TT_times :: tokens)
+        | Some '-' -> f (self#token_at_current TT_minus :: tokens)
         | Some '<' -> f (self#token_at_current TT_less :: tokens)
         | Some '=' -> f (self#token_at_current TT_equal :: tokens)
         | Some ':' -> f (self#token_at_current TT_colon :: tokens)
