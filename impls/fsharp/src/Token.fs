@@ -1,5 +1,6 @@
 module Token
-  type TokenType =
+
+type TokenType =
     | TT_tint
     | TT_tbool
     | TT_colon
@@ -23,7 +24,7 @@ module Token
     | TT_semisemi
     | TT_eof
 
-  type Token =
-    { Type  : TokenType
-      Lexeme : string
-      Line   : int }
+type Token =
+    { Type: TokenType
+      Lexeme: string
+      Line: int }

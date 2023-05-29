@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="src/Token.fs" />
     <Compile Include="src/Lexer.fs" />
+    <Compile Include="src/Server.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
